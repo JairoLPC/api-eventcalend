@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: eventcalend-api
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: ohio
+    envVars:
+      - key: PORT
+        value: 8080

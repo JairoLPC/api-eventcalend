@@ -1,4 +1,4 @@
-package com.eventcalend.api.usuario;
+package com.eventcalend.api.domain.usuario;
 
 public record DadosListagemUsuario(Long id, String nome, String email, String telefone,TipoDeUsuario tipodeusuario) {
     public DadosListagemUsuario(Usuario usuario) {

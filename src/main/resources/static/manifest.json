@@ -1,0 +1,19 @@
+{
+  "short_name": "EVENTCALEND",
+  "name": "EVENTCALEND - Gestão de Eventos",
+  "description": "Gerencie seus eventos, agenda, finanças e contatos em um só lugar.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#f7f6f1",
+  "theme_color": "#2563eb",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities", "business"]
+}

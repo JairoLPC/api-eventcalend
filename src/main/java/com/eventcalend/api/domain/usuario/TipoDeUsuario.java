@@ -1,4 +1,4 @@
-package com.eventcalend.api.usuario;
+package com.eventcalend.api.domain.usuario;
 
 public enum TipoDeUsuario {
     ARTISTA,

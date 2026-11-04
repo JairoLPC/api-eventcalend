@@ -1,4 +1,4 @@
-package com.eventcalend.api.endereco;
+package com.eventcalend.api.domain.endereco;
 
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
@@ -29,8 +29,8 @@ public class Endereco {
         this.cep = endereco.cep();
     }
 
-    public void atualizarEndereço(DadosEndereco endereco) {
-        if (endereco.logradouro() != null) {
+    public void atualizarEndereco(DadosEndereco endereco) {
+        if (endereco.logradouro() != null && !endereco.logradouro().isBlank()) {
             this.logradouro = endereco.logradouro();
         }
         if (endereco.numero() != null) {
@@ -39,16 +39,16 @@ public class Endereco {
         if (endereco.complemento() != null) {
             this.complemento = endereco.complemento();
         }
-        if (endereco.bairro() != null) {
+        if (endereco.bairro() != null && !endereco.bairro().isBlank()) {
             this.bairro = endereco.bairro();
         }
-        if (endereco.cidade() != null) {
+        if (endereco.cidade() != null && !endereco.cidade().isBlank()) {
             this.cidade = endereco.cidade();
         }
-        if (endereco.estado() != null) {
+        if (endereco.estado() != null && !endereco.estado().isBlank()) {
             this.estado = endereco.estado();
         }
-        if (endereco.cep() != null) {
+        if (endereco.cep() != null && !endereco.cep().isBlank()) {
             this.cep = endereco.cep();
         }
     }

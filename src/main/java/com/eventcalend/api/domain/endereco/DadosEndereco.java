@@ -1,4 +1,4 @@
-package com.eventcalend.api.endereco;
+package com.eventcalend.api.domain.endereco;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

@@ -235,5 +235,3 @@ Base URL: `http://localhost:8080`
 
 Desenvolvido por **Jairo** durante estudos práticos de desenvolvimento de APIs RESTful com Spring Boot 3.
 
----
-Feito com ☕ e código!
