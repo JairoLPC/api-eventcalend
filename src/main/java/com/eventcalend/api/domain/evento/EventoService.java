@@ -79,20 +79,25 @@ public class EventoService {
         long qtdAReceber = 0;
 
         for (Evento evento : eventos) {
-            BigDecimal valor = evento.getValor() != null ? evento.getValor() : BigDecimal.ZERO;
+            BigDecimal valorTotal = evento.getValor() != null ? evento.getValor() : BigDecimal.ZERO;
+            BigDecimal adiantamento = evento.getValorAdiantamento() != null ? evento.getValorAdiantamento() : BigDecimal.ZERO;
             String statusPagamento = normalizarStatusPagamento(evento.getStatusPagamento());
 
             switch (statusPagamento) {
                 case STATUS_PAGO -> {
-                    totalPago = totalPago.add(valor);
+                    totalPago = totalPago.add(valorTotal);
                     qtdPagos++;
                 }
                 case STATUS_ADIANTAMENTO -> {
-                    totalAdiantamento = totalAdiantamento.add(valor);
+                    totalAdiantamento = totalAdiantamento.add(adiantamento);
                     qtdAdiantamentos++;
+                    BigDecimal restante = valorTotal.subtract(adiantamento);
+                    if (restante.compareTo(BigDecimal.ZERO) > 0) {
+                        totalAReceber = totalAReceber.add(restante);
+                    }
                 }
                 default -> {
-                    totalAReceber = totalAReceber.add(valor);
+                    totalAReceber = totalAReceber.add(valorTotal);
                     qtdAReceber++;
                 }
             }
