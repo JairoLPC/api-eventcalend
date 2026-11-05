@@ -2,6 +2,7 @@ package com.eventcalend.api.controller;
 
 import com.eventcalend.api.domain.ValidacaoException;
 import com.eventcalend.api.domain.usuario.*;
+import com.eventcalend.api.infra.email.EmailService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -29,24 +30,31 @@ public class AutenticacaoController {
 
     private static final Map<String, TokenRecuperacao> TOKENS_RECUPERACAO = new ConcurrentHashMap<>();
 
-    private record TokenRecuperacao(String codigo, long expiracaoMs) {
+    private record TokenRecuperacao(String codigo, long expiracaoMs, boolean verificado) {
         boolean estaExpirado() {
             return System.currentTimeMillis() > expiracaoMs;
+        }
+
+        TokenRecuperacao comVerificado(boolean novoStatus) {
+            return new TokenRecuperacao(this.codigo, this.expiracaoMs, novoStatus);
         }
     }
 
     private final AuthenticationManager manager;
     private final CadastroRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public AutenticacaoController(
             AuthenticationManager manager,
             CadastroRepository repository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            EmailService emailService
     ) {
         this.manager = manager;
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @PostMapping
@@ -118,16 +126,42 @@ public class AutenticacaoController {
         String codigo = String.format("%06d", new Random().nextInt(900000) + 100000);
         long expiracaoMs = System.currentTimeMillis() + TEMPO_EXPIRACAO_TOKEN_MS;
 
-        TOKENS_RECUPERACAO.put(email.toLowerCase(), new TokenRecuperacao(codigo, expiracaoMs));
+        TOKENS_RECUPERACAO.put(email.toLowerCase(), new TokenRecuperacao(codigo, expiracaoMs, false));
 
-        String mensagem = "Enviamos o código de verificação para " + email + ". Digite o código de 6 dígitos para redefinir sua senha.";
+        // Envia o e-mail real com o código de verificação
+        emailService.enviarCodigoRecuperacao(email, codigo);
+
+        String mensagem = "Enviamos o código de verificação para " + email + ". Confira a caixa de entrada ou spam do seu e-mail.";
 
         Map<String, String> resposta = new LinkedHashMap<>();
         resposta.put("mensagem", mensagem);
-        resposta.put("codigoSimulado", codigo); // Retorna o código para facilitar visualização no app
         resposta.put("email", email);
 
         return ResponseEntity.ok(resposta);
+    }
+
+    @PostMapping("/validar-codigo")
+    public ResponseEntity<Map<String, String>> validarCodigoRecuperacao(@RequestBody @Valid DadosValidacaoCodigo dados) {
+        String email = dados.loguin().trim();
+        TokenRecuperacao token = TOKENS_RECUPERACAO.get(email.toLowerCase());
+
+        if (token == null) {
+            throw new ValidacaoException("Nenhuma solicitação de código encontrada para este e-mail. Solicite um novo código.");
+        }
+
+        if (token.estaExpirado()) {
+            TOKENS_RECUPERACAO.remove(email.toLowerCase());
+            throw new ValidacaoException("O código de verificação expirou. Por favor, solicite um novo código.");
+        }
+
+        if (!token.codigo().equals(dados.codigo().trim())) {
+            throw new ValidacaoException("Código de verificação incorreto. Verifique o e-mail recebido.");
+        }
+
+        // Marca o token como verificado para autorizar a próxima etapa de alteração da senha
+        TOKENS_RECUPERACAO.put(email.toLowerCase(), token.comVerificado(true));
+
+        return ResponseEntity.ok(Map.of("mensagem", "Código verificado com sucesso! Agora defina a sua nova senha."));
     }
 
     @PostMapping("/confirmar-recuperacao")
@@ -145,8 +179,8 @@ public class AutenticacaoController {
             throw new ValidacaoException("O código de verificação expirou. Por favor, solicite um novo código.");
         }
 
-        if (!token.codigo().equals(dados.codigo().trim())) {
-            throw new ValidacaoException("Código de verificação incorreto. Verifique o código enviado para o seu e-mail.");
+        if (!token.verificado() || !token.codigo().equals(dados.codigo().trim())) {
+            throw new ValidacaoException("Validação pendente ou código incorreto. Valide seu código de verificação primeiro.");
         }
 
         Cadastro cadastro = repository.findCadastroByLoguin(email)
