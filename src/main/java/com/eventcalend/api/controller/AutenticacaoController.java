@@ -56,7 +56,11 @@ public class AutenticacaoController {
     public ResponseEntity<List<Map<String, Object>>> buscarUsuariosDoApp(
             @RequestParam(name = "termo", required = false, defaultValue = "") String termo
     ) {
-        List<Cadastro> encontrados = repository.buscarPorNomeOuEmail(termo.trim());
+        String busca = termo == null ? "" : termo.trim();
+        if (busca.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        List<Cadastro> encontrados = repository.buscarPorNomeOuEmail(busca);
         List<Map<String, Object>> resultado = encontrados.stream()
                 .map(this::montarRespostaPerfil)
                 .toList();
