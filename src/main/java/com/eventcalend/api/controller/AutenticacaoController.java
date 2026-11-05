@@ -1,12 +1,7 @@
 package com.eventcalend.api.controller;
 
 import com.eventcalend.api.domain.ValidacaoException;
-import com.eventcalend.api.domain.usuario.Cadastro;
-import com.eventcalend.api.domain.usuario.CadastroRepository;
-import com.eventcalend.api.domain.usuario.DadosAtualizacaoPerfil;
-import com.eventcalend.api.domain.usuario.DadosAutenticacao;
-import com.eventcalend.api.domain.usuario.DadosRedefinicaoSenha;
-import com.eventcalend.api.domain.usuario.DadosRegistroCadastro;
+import com.eventcalend.api.domain.usuario.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -20,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/login")
@@ -28,6 +25,15 @@ public class AutenticacaoController {
 
     private static final String TELEFONE_PADRAO = "(11) 98765-4321";
     private static final String PROFISSAO_PADRAO = "Produtor(a) de eventos";
+    private static final long TEMPO_EXPIRACAO_TOKEN_MS = 15 * 60 * 1000; // 15 minutos
+
+    private static final Map<String, TokenRecuperacao> TOKENS_RECUPERACAO = new ConcurrentHashMap<>();
+
+    private record TokenRecuperacao(String codigo, long expiracaoMs) {
+        boolean estaExpirado() {
+            return System.currentTimeMillis() > expiracaoMs;
+        }
+    }
 
     private final AuthenticationManager manager;
     private final CadastroRepository repository;
@@ -100,6 +106,56 @@ public class AutenticacaoController {
 
         cadastro.atualizarPerfil(dados.nome(), dados.loguin(), dados.telefone(), dados.profissao());
         return ResponseEntity.ok(montarRespostaPerfil(cadastro));
+    }
+
+    @PostMapping("/esqueci-senha")
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, String>> solicitarCodigoRecuperacao(@RequestBody @Valid DadosSolicitacaoCodigo dados) {
+        String email = dados.loguin().trim();
+        Cadastro cadastro = repository.findCadastroByLoguin(email)
+                .orElseThrow(() -> new ValidacaoException("Nenhuma conta encontrada com o e-mail: " + email));
+
+        String codigo = String.format("%06d", new Random().nextInt(900000) + 100000);
+        long expiracaoMs = System.currentTimeMillis() + TEMPO_EXPIRACAO_TOKEN_MS;
+
+        TOKENS_RECUPERACAO.put(email.toLowerCase(), new TokenRecuperacao(codigo, expiracaoMs));
+
+        String mensagem = "Enviamos o código de verificação para " + email + ". Digite o código de 6 dígitos para redefinir sua senha.";
+
+        Map<String, String> resposta = new LinkedHashMap<>();
+        resposta.put("mensagem", mensagem);
+        resposta.put("codigoSimulado", codigo); // Retorna o código para facilitar visualização no app
+        resposta.put("email", email);
+
+        return ResponseEntity.ok(resposta);
+    }
+
+    @PostMapping("/confirmar-recuperacao")
+    @Transactional
+    public ResponseEntity<Map<String, String>> confirmarRecuperacao(@RequestBody @Valid DadosConfirmacaoCodigo dados) {
+        String email = dados.loguin().trim();
+        TokenRecuperacao token = TOKENS_RECUPERACAO.get(email.toLowerCase());
+
+        if (token == null) {
+            throw new ValidacaoException("Nenhuma solicitação de código encontrada para este e-mail. Solicite um novo código.");
+        }
+
+        if (token.estaExpirado()) {
+            TOKENS_RECUPERACAO.remove(email.toLowerCase());
+            throw new ValidacaoException("O código de verificação expirou. Por favor, solicite um novo código.");
+        }
+
+        if (!token.codigo().equals(dados.codigo().trim())) {
+            throw new ValidacaoException("Código de verificação incorreto. Verifique o código enviado para o seu e-mail.");
+        }
+
+        Cadastro cadastro = repository.findCadastroByLoguin(email)
+                .orElseThrow(() -> new ValidacaoException("Conta não encontrada."));
+
+        cadastro.atualizarSenha(passwordEncoder.encode(dados.novaSenha()));
+        TOKENS_RECUPERACAO.remove(email.toLowerCase());
+
+        return ResponseEntity.ok(Map.of("mensagem", "Senha redefinida com sucesso! Você já pode fazer login com sua nova senha."));
     }
 
     @PutMapping("/redefinir-senha")
