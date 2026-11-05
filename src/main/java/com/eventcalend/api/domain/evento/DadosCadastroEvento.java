@@ -37,6 +37,8 @@ public record DadosCadastroEvento(
         String statusPagamento,
         @PositiveOrZero(message = "O valor não pode ser negativo")
         BigDecimal valor,
+        @PositiveOrZero(message = "O valor do adiantamento não pode ser negativo")
+        BigDecimal valorAdiantamento,
         String observacoes
 ) {
 }

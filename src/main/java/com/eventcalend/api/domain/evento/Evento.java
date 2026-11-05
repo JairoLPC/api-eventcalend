@@ -50,6 +50,9 @@ public class Evento {
 
     private BigDecimal valor;
 
+    @Column(name = "valor_adiantamento")
+    private BigDecimal valorAdiantamento;
+
     @Column(columnDefinition = "TEXT")
     private String observacoes;
 
@@ -69,6 +72,7 @@ public class Evento {
         this.status = textoOuPadrao(dados.status(), STATUS_PADRAO);
         this.statusPagamento = textoOuPadrao(dados.statusPagamento(), PAGAMENTO_PADRAO).toUpperCase();
         this.valor = dados.valor() != null ? dados.valor() : BigDecimal.ZERO;
+        this.valorAdiantamento = dados.valorAdiantamento() != null ? dados.valorAdiantamento() : BigDecimal.ZERO;
         this.observacoes = dados.observacoes();
         this.ativo = true;
     }
@@ -114,6 +118,9 @@ public class Evento {
         }
         if (dados.valor() != null) {
             this.valor = dados.valor();
+        }
+        if (dados.valorAdiantamento() != null) {
+            this.valorAdiantamento = dados.valorAdiantamento();
         }
         if (dados.observacoes() != null) {
             this.observacoes = dados.observacoes();
