@@ -1,6 +1,7 @@
 package com.eventcalend.api.controller;
 
 import com.eventcalend.api.domain.evento.*;
+import com.eventcalend.api.infra.ai.GeminiService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +16,16 @@ import java.util.Map;
 public class EventoController {
 
     private final EventoService eventoService;
+    private final GeminiService geminiService;
 
-    public EventoController(EventoService eventoService) {
+    public EventoController(EventoService eventoService, GeminiService geminiService) {
         this.eventoService = eventoService;
+        this.geminiService = geminiService;
+    }
+
+    @PostMapping("/extrair-texto")
+    public ResponseEntity<DadosResultadoExtracao> extrairTextoEvento(@RequestBody @Valid DadosExtracaoTexto dados) {
+        return ResponseEntity.ok(geminiService.extrairDadosEvento(dados.texto()));
     }
 
     @GetMapping
