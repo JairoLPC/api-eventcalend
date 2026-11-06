@@ -14,7 +14,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 @RestController
 @RequestMapping("/usuarios")
-@CrossOrigin(origins = "*")
 public class UsuarioController {
 
     private final UsuarioRepository repository;
@@ -29,19 +28,16 @@ public class UsuarioController {
             @RequestBody @Valid DadosCadastroUsuario dados,
             UriComponentsBuilder uriBuilder
     ) {
-        var existente = repository.findByEmail(dados.email().trim());
-        if (existente.isPresent()) {
-            Usuario usuarioExistente = existente.get();
-            if (usuarioExistente.isAtivo()) {
-                throw new ValidacaoException("Já existe um contato cadastrado com este e-mail.");
-            }
-            usuarioExistente.reativarEAtualizar(dados);
-            var uri = uriBuilder.path("/usuarios/{id}").buildAndExpand(usuarioExistente.getId()).toUri();
-            return ResponseEntity.created(uri).body(new DadosListagemUsuarioDetalhado(usuarioExistente));
-        }
+        Usuario usuario = repository.findByEmail(dados.email().trim())
+                .map(existente -> {
+                    if (existente.isAtivo()) {
+                        throw new ValidacaoException("Já existe um contato cadastrado com este e-mail.");
+                    }
+                    existente.reativarEAtualizar(dados);
+                    return existente;
+                })
+                .orElseGet(() -> repository.save(new Usuario(dados)));
 
-        var usuario = new Usuario(dados);
-        repository.save(usuario);
         var uri = uriBuilder.path("/usuarios/{id}").buildAndExpand(usuario.getId()).toUri();
         return ResponseEntity.created(uri).body(new DadosListagemUsuarioDetalhado(usuario));
     }

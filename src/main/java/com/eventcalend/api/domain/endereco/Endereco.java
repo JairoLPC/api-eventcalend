@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
+
 @Embeddable
 @Getter
 @NoArgsConstructor
@@ -30,26 +32,16 @@ public class Endereco {
     }
 
     public void atualizarEndereco(DadosEndereco endereco) {
-        if (endereco.logradouro() != null && !endereco.logradouro().isBlank()) {
-            this.logradouro = endereco.logradouro();
-        }
-        if (endereco.numero() != null) {
-            this.numero = endereco.numero();
-        }
-        if (endereco.complemento() != null) {
-            this.complemento = endereco.complemento();
-        }
-        if (endereco.bairro() != null && !endereco.bairro().isBlank()) {
-            this.bairro = endereco.bairro();
-        }
-        if (endereco.cidade() != null && !endereco.cidade().isBlank()) {
-            this.cidade = endereco.cidade();
-        }
-        if (endereco.estado() != null && !endereco.estado().isBlank()) {
-            this.estado = endereco.estado();
-        }
-        if (endereco.cep() != null && !endereco.cep().isBlank()) {
-            this.cep = endereco.cep();
-        }
+        this.logradouro = textoOuAtual(endereco.logradouro(), this.logradouro);
+        this.numero = Objects.requireNonNullElse(endereco.numero(), this.numero);
+        this.complemento = Objects.requireNonNullElse(endereco.complemento(), this.complemento);
+        this.bairro = textoOuAtual(endereco.bairro(), this.bairro);
+        this.cidade = textoOuAtual(endereco.cidade(), this.cidade);
+        this.estado = textoOuAtual(endereco.estado(), this.estado);
+        this.cep = textoOuAtual(endereco.cep(), this.cep);
+    }
+
+    private static String textoOuAtual(String novoValor, String valorAtual) {
+        return (novoValor != null && !novoValor.isBlank()) ? novoValor : valorAtual;
     }
 }

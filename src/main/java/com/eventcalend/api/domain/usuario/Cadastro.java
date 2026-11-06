@@ -29,29 +29,19 @@ public class Cadastro implements UserDetails {
     private String telefone;
     private String profissao;
 
-    public Cadastro(Long id, String loguin, String senha) {
-        this(id, loguin, senha, null, "(11) 98765-4321", "Produtor(a) de eventos");
-    }
-
     public void atualizarPerfil(String nome, String loguin, String telefone, String profissao) {
-        if (nome != null && !nome.isBlank()) {
-            this.nome = nome.trim();
-        }
-        if (loguin != null && !loguin.isBlank()) {
-            this.loguin = loguin.trim();
-        }
-        if (telefone != null && !telefone.isBlank()) {
-            this.telefone = telefone.trim();
-        }
-        if (profissao != null && !profissao.isBlank()) {
-            this.profissao = profissao.trim();
-        }
+        this.nome = textoOuAtual(nome, this.nome);
+        this.loguin = textoOuAtual(loguin, this.loguin);
+        this.telefone = textoOuAtual(telefone, this.telefone);
+        this.profissao = textoOuAtual(profissao, this.profissao);
     }
 
     public void atualizarSenha(String senhaCriptografada) {
-        if (senhaCriptografada != null && !senhaCriptografada.isBlank()) {
-            this.senha = senhaCriptografada;
-        }
+        this.senha = textoOuAtual(senhaCriptografada, this.senha);
+    }
+
+    private static String textoOuAtual(String novoValor, String valorAtual) {
+        return (novoValor != null && !novoValor.isBlank()) ? novoValor.trim() : valorAtual;
     }
 
     @Override

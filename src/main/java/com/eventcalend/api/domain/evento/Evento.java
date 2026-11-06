@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Objects;
 
 @Table(name = "eventos")
 @Entity(name = "Evento")
@@ -59,7 +60,11 @@ public class Evento {
     private boolean ativo;
 
     public Evento(DadosCadastroEvento dados) {
+        BigDecimal valorTotal = Objects.requireNonNullElse(dados.valor(), BigDecimal.ZERO);
+        BigDecimal adiantamento = Objects.requireNonNullElse(dados.valorAdiantamento(), BigDecimal.ZERO);
         validarIntervaloHorario(dados.horaInicio(), dados.horaFim());
+        validarValores(valorTotal, adiantamento);
+
         this.titulo = dados.titulo().trim();
         this.tipo = textoOuPadrao(dados.tipo(), TIPO_PADRAO);
         this.dataEvento = dados.dataEvento();
@@ -71,60 +76,35 @@ public class Evento {
         this.cep = normalizarCep(dados.cep());
         this.status = textoOuPadrao(dados.status(), STATUS_PADRAO);
         this.statusPagamento = textoOuPadrao(dados.statusPagamento(), PAGAMENTO_PADRAO).toUpperCase();
-        this.valor = dados.valor() != null ? dados.valor() : BigDecimal.ZERO;
-        this.valorAdiantamento = dados.valorAdiantamento() != null ? dados.valorAdiantamento() : BigDecimal.ZERO;
+        this.valor = valorTotal;
+        this.valorAdiantamento = adiantamento;
         this.observacoes = dados.observacoes();
         this.ativo = true;
     }
 
     public void atualizarInformacoes(DadosAtualizacaoEvento dados) {
-        String novoInicio = dados.horaInicio() != null && !dados.horaInicio().isBlank()
-                ? dados.horaInicio().trim()
-                : this.horaInicio;
-        String novoFim = dados.horaFim() != null && !dados.horaFim().isBlank()
-                ? dados.horaFim().trim()
-                : this.horaFim;
-        validarIntervaloHorario(novoInicio, novoFim);
+        String novoInicio = textoOuPadrao(dados.horaInicio(), this.horaInicio);
+        String novoFim = textoOuPadrao(dados.horaFim(), this.horaFim);
+        BigDecimal novoValor = Objects.requireNonNullElse(dados.valor(), this.valor);
+        BigDecimal novoAdiantamento = Objects.requireNonNullElse(dados.valorAdiantamento(), this.valorAdiantamento);
 
-        if (dados.titulo() != null && !dados.titulo().isBlank()) {
-            this.titulo = dados.titulo().trim();
-        }
-        if (dados.tipo() != null && !dados.tipo().isBlank()) {
-            this.tipo = dados.tipo().trim();
-        }
-        if (dados.dataEvento() != null) {
-            this.dataEvento = dados.dataEvento();
-        }
+        validarIntervaloHorario(novoInicio, novoFim);
+        validarValores(novoValor, novoAdiantamento);
+
+        this.titulo = textoOuPadrao(dados.titulo(), this.titulo);
+        this.tipo = textoOuPadrao(dados.tipo(), this.tipo);
+        this.dataEvento = Objects.requireNonNullElse(dados.dataEvento(), this.dataEvento);
         this.horaInicio = novoInicio;
         this.horaFim = novoFim;
-
-        if (dados.logradouro() != null && !dados.logradouro().isBlank()) {
-            this.logradouro = dados.logradouro().trim();
-        }
-        if (dados.numero() != null) {
-            this.numero = dados.numero().trim();
-        }
-        if (dados.complemento() != null) {
-            this.complemento = dados.complemento().trim();
-        }
-        if (dados.cep() != null) {
-            this.cep = normalizarCep(dados.cep());
-        }
-        if (dados.status() != null && !dados.status().isBlank()) {
-            this.status = dados.status().trim();
-        }
-        if (dados.statusPagamento() != null && !dados.statusPagamento().isBlank()) {
-            this.statusPagamento = dados.statusPagamento().trim().toUpperCase();
-        }
-        if (dados.valor() != null) {
-            this.valor = dados.valor();
-        }
-        if (dados.valorAdiantamento() != null) {
-            this.valorAdiantamento = dados.valorAdiantamento();
-        }
-        if (dados.observacoes() != null) {
-            this.observacoes = dados.observacoes();
-        }
+        this.logradouro = textoOuPadrao(dados.logradouro(), this.logradouro);
+        this.numero = dados.numero() != null ? dados.numero().trim() : this.numero;
+        this.complemento = dados.complemento() != null ? dados.complemento().trim() : this.complemento;
+        this.cep = dados.cep() != null ? normalizarCep(dados.cep()) : this.cep;
+        this.status = textoOuPadrao(dados.status(), this.status);
+        this.statusPagamento = textoOuPadrao(dados.statusPagamento(), this.statusPagamento).toUpperCase();
+        this.valor = novoValor;
+        this.valorAdiantamento = novoAdiantamento;
+        this.observacoes = Objects.requireNonNullElse(dados.observacoes(), this.observacoes);
     }
 
     public void excluir() {
@@ -145,6 +125,12 @@ public class Evento {
             throw ex;
         } catch (Exception ignored) {
             // Formato validado pelo Bean Validation
+        }
+    }
+
+    private static void validarValores(BigDecimal valorTotal, BigDecimal adiantamento) {
+        if (valorTotal != null && adiantamento != null && adiantamento.compareTo(valorTotal) > 0) {
+            throw new ValidacaoException("O valor do adiantamento não pode ser maior que o valor total do evento.");
         }
     }
 

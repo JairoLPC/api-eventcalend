@@ -7,6 +7,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
+
 @Table(name = "usuarios")
 @Entity(name = "usuarios")
 @Getter
@@ -30,27 +32,14 @@ public class Usuario {
     private boolean ativo;
 
     public Usuario(DadosCadastroUsuario dados) {
-        this.ativo = true;
-        this.nome = dados.nome();
-        this.email = dados.email();
-        this.telefone = dados.telefone();
-        this.tipodeusuario = dados.tipodeusuario();
-        this.endereco = new Endereco(dados.endereco());
+        reativarEAtualizar(dados);
     }
 
     public void atualizarInformacoes(DadosCadastroUsuarioAtualizado dados) {
-        if (dados.nome() != null && !dados.nome().isBlank()) {
-            this.nome = dados.nome();
-        }
-        if (dados.email() != null && !dados.email().isBlank()) {
-            this.email = dados.email();
-        }
-        if (dados.telefone() != null && !dados.telefone().isBlank()) {
-            this.telefone = dados.telefone();
-        }
-        if (dados.tipodeusuario() != null) {
-            this.tipodeusuario = dados.tipodeusuario();
-        }
+        this.nome = textoOuAtual(dados.nome(), this.nome);
+        this.email = textoOuAtual(dados.email(), this.email);
+        this.telefone = textoOuAtual(dados.telefone(), this.telefone);
+        this.tipodeusuario = Objects.requireNonNullElse(dados.tipodeusuario(), this.tipodeusuario);
         if (dados.endereco() != null) {
             if (this.endereco == null) {
                 this.endereco = new Endereco(dados.endereco());
@@ -71,5 +60,9 @@ public class Usuario {
 
     public void excluir() {
         this.ativo = false;
+    }
+
+    private static String textoOuAtual(String novoValor, String valorAtual) {
+        return (novoValor != null && !novoValor.isBlank()) ? novoValor : valorAtual;
     }
 }

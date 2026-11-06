@@ -2,6 +2,7 @@ package com.eventcalend.api.domain.evento;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 
 public record DadosDetalhamentoEvento(
         Long id,
@@ -26,14 +27,18 @@ public record DadosDetalhamentoEvento(
         String observacoes
 ) {
     public DadosDetalhamentoEvento(Evento evento) {
+        this(evento, Objects.requireNonNullElseGet(evento.getDataEvento(), LocalDate::now));
+    }
+
+    private DadosDetalhamentoEvento(Evento evento, LocalDate dataRef) {
         this(
                 evento.getId(),
                 evento.getTitulo(),
                 evento.getTipo(),
                 evento.getDataEvento(),
-                evento.getDataEvento() != null ? evento.getDataEvento().getDayOfMonth() : 1,
-                evento.getDataEvento() != null ? evento.getDataEvento().getMonthValue() : 5,
-                evento.getDataEvento() != null ? evento.getDataEvento().getYear() : 2025,
+                dataRef.getDayOfMonth(),
+                dataRef.getMonthValue(),
+                dataRef.getYear(),
                 evento.getHoraInicio(),
                 evento.getHoraFim(),
                 evento.getHoraInicio() + " - " + evento.getHoraFim(),
@@ -44,14 +49,14 @@ public record DadosDetalhamentoEvento(
                 montarLocal(evento),
                 evento.getStatus(),
                 evento.getStatusPagamento(),
-                evento.getValor() != null ? evento.getValor() : BigDecimal.ZERO,
-                evento.getValorAdiantamento() != null ? evento.getValorAdiantamento() : BigDecimal.ZERO,
+                Objects.requireNonNullElse(evento.getValor(), BigDecimal.ZERO),
+                Objects.requireNonNullElse(evento.getValorAdiantamento(), BigDecimal.ZERO),
                 evento.getObservacoes()
         );
     }
 
     private static String montarLocal(Evento evento) {
-        StringBuilder sb = new StringBuilder(evento.getLogradouro() != null ? evento.getLogradouro() : "");
+        StringBuilder sb = new StringBuilder(Objects.requireNonNullElse(evento.getLogradouro(), ""));
         if (evento.getNumero() != null && !evento.getNumero().isBlank()) {
             sb.append(", ").append(evento.getNumero());
         }

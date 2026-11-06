@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class EventoService {
@@ -42,14 +43,12 @@ public class EventoService {
 
     @Transactional(readOnly = true)
     public DadosDetalhamentoEvento detalharPorId(Long id) {
-        Evento evento = buscarEventoAtivo(id);
-        return new DadosDetalhamentoEvento(evento);
+        return new DadosDetalhamentoEvento(buscarEventoAtivo(id));
     }
 
     @Transactional
     public Evento criar(DadosCadastroEvento dados) {
-        Evento evento = new Evento(dados);
-        return eventoRepository.save(evento);
+        return eventoRepository.save(new Evento(dados));
     }
 
     @Transactional
@@ -61,8 +60,7 @@ public class EventoService {
 
     @Transactional
     public void excluir(Long id) {
-        Evento evento = buscarEventoAtivo(id);
-        evento.excluir();
+        buscarEventoAtivo(id).excluir();
     }
 
     @Transactional(readOnly = true)
@@ -79,8 +77,8 @@ public class EventoService {
         long qtdAReceber = 0;
 
         for (Evento evento : eventos) {
-            BigDecimal valorTotal = evento.getValor() != null ? evento.getValor() : BigDecimal.ZERO;
-            BigDecimal adiantamento = evento.getValorAdiantamento() != null ? evento.getValorAdiantamento() : BigDecimal.ZERO;
+            BigDecimal valorTotal = Objects.requireNonNullElse(evento.getValor(), BigDecimal.ZERO);
+            BigDecimal adiantamento = Objects.requireNonNullElse(evento.getValorAdiantamento(), BigDecimal.ZERO);
             String statusPagamento = normalizarStatusPagamento(evento.getStatusPagamento());
 
             switch (statusPagamento) {
@@ -94,6 +92,7 @@ public class EventoService {
                     BigDecimal restante = valorTotal.subtract(adiantamento);
                     if (restante.compareTo(BigDecimal.ZERO) > 0) {
                         totalAReceber = totalAReceber.add(restante);
+                        qtdAReceber++;
                     }
                 }
                 default -> {
@@ -125,14 +124,14 @@ public class EventoService {
                 ? dados.tipoInformacao().trim().toUpperCase()
                 : COMPARTILHAMENTO_COMPLETO;
 
-        EventoCompartilhamento registro = new EventoCompartilhamento(evento.getId(), usuario.getId(), tipoInfo);
-        compartilhamentoRepository.save(registro);
+        EventoCompartilhamento registro = compartilhamentoRepository.save(
+                new EventoCompartilhamento(evento.getId(), usuario.getId(), tipoInfo)
+        );
 
-        String resumoConvite = formatarResumoConvite(evento, tipoInfo);
         return Map.of(
                 "id", registro.getId(),
                 "mensagem", "Evento compartilhado com " + usuario.getNome() + " com sucesso!",
-                "resumo", resumoConvite
+                "resumo", formatarResumoConvite(evento, tipoInfo)
         );
     }
 
@@ -147,6 +146,9 @@ public class EventoService {
 
     private static String formatarResumoConvite(Evento evento, String tipoInfo) {
         if (COMPARTILHAMENTO_COMPLETO.equals(tipoInfo)) {
+            String obs = (evento.getObservacoes() != null && !evento.getObservacoes().isBlank())
+                    ? evento.getObservacoes()
+                    : "Sem observações";
             return String.format(
                     "Evento: %s (%s) | Data: %s das %s às %s | Local: %s | Valor: R$ %s | Obs: %s",
                     evento.getTitulo(),
@@ -156,9 +158,7 @@ public class EventoService {
                     evento.getHoraFim(),
                     evento.getLogradouro(),
                     evento.getValor(),
-                    evento.getObservacoes() != null && !evento.getObservacoes().isBlank()
-                            ? evento.getObservacoes()
-                            : "Sem observações"
+                    obs
             );
         }
         return String.format(
