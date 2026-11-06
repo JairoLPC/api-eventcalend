@@ -59,6 +59,15 @@ public class AutenticacaoController {
         this.emailService = emailService;
     }
 
+    @GetMapping("/versao")
+    public ResponseEntity<Map<String, Object>> obterVersaoServidor() {
+        return ResponseEntity.ok(Map.of(
+                "versaoServidor", "1.01",
+                "dataVersao", "2026-11-06",
+                "notas", "Versão 1.01 com leitor de IA Gemini 1.5 Flash, busca de CEP ViaCEP, hiperlinks para Google Maps e atualização automática OTA."
+        ));
+    }
+
     @PostMapping
     public ResponseEntity<DadosPerfilUsuario> efetuarLogin(@RequestBody @Valid DadosAutenticacao dados) {
         var token = new UsernamePasswordAuthenticationToken(dados.loguin(), dados.senha());
