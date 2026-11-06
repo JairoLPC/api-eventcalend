@@ -54,6 +54,8 @@ public class Evento {
     @Column(name = "valor_adiantamento")
     private BigDecimal valorAdiantamento;
 
+    private BigDecimal custo;
+
     @Column(columnDefinition = "TEXT")
     private String observacoes;
 
@@ -62,6 +64,8 @@ public class Evento {
     public Evento(DadosCadastroEvento dados) {
         BigDecimal valorTotal = Objects.requireNonNullElse(dados.valor(), BigDecimal.ZERO);
         BigDecimal adiantamento = Objects.requireNonNullElse(dados.valorAdiantamento(), BigDecimal.ZERO);
+        BigDecimal valorCusto = Objects.requireNonNullElse(dados.custo(), BigDecimal.ZERO);
+
         validarIntervaloHorario(dados.horaInicio(), dados.horaFim());
         validarValores(valorTotal, adiantamento);
 
@@ -78,6 +82,7 @@ public class Evento {
         this.statusPagamento = textoOuPadrao(dados.statusPagamento(), PAGAMENTO_PADRAO).toUpperCase();
         this.valor = valorTotal;
         this.valorAdiantamento = adiantamento;
+        this.custo = valorCusto;
         this.observacoes = dados.observacoes();
         this.ativo = true;
     }
@@ -87,6 +92,7 @@ public class Evento {
         String novoFim = textoOuPadrao(dados.horaFim(), this.horaFim);
         BigDecimal novoValor = Objects.requireNonNullElse(dados.valor(), this.valor);
         BigDecimal novoAdiantamento = Objects.requireNonNullElse(dados.valorAdiantamento(), this.valorAdiantamento);
+        BigDecimal novoCusto = Objects.requireNonNullElse(dados.custo(), this.custo);
 
         validarIntervaloHorario(novoInicio, novoFim);
         validarValores(novoValor, novoAdiantamento);
@@ -104,6 +110,7 @@ public class Evento {
         this.statusPagamento = textoOuPadrao(dados.statusPagamento(), this.statusPagamento).toUpperCase();
         this.valor = novoValor;
         this.valorAdiantamento = novoAdiantamento;
+        this.custo = novoCusto;
         this.observacoes = Objects.requireNonNullElse(dados.observacoes(), this.observacoes);
     }
 

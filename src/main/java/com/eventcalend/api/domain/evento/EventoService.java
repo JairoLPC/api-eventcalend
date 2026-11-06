@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -76,10 +77,15 @@ public class EventoService {
         BigDecimal totalAReceber = BigDecimal.ZERO;
         long qtdAReceber = 0;
 
+        BigDecimal totalCustos = BigDecimal.ZERO;
+
         for (Evento evento : eventos) {
             BigDecimal valorTotal = Objects.requireNonNullElse(evento.getValor(), BigDecimal.ZERO);
             BigDecimal adiantamento = Objects.requireNonNullElse(evento.getValorAdiantamento(), BigDecimal.ZERO);
+            BigDecimal custo = Objects.requireNonNullElse(evento.getCusto(), BigDecimal.ZERO);
             String statusPagamento = normalizarStatusPagamento(evento.getStatusPagamento());
+
+            totalCustos = totalCustos.add(custo);
 
             switch (statusPagamento) {
                 case STATUS_PAGO -> {
@@ -103,6 +109,15 @@ public class EventoService {
         }
 
         BigDecimal saldoPrevisto = totalPago.add(totalAdiantamento).add(totalAReceber);
+        BigDecimal arrecadadoAtual = totalPago.add(totalAdiantamento);
+        BigDecimal lucroLiquido = arrecadadoAtual.subtract(totalCustos);
+
+        BigDecimal margemLucroPercentual = BigDecimal.ZERO;
+        if (arrecadadoAtual.compareTo(BigDecimal.ZERO) > 0) {
+            margemLucroPercentual = lucroLiquido.multiply(new BigDecimal("100"))
+                    .divide(arrecadadoAtual, 2, RoundingMode.HALF_UP);
+        }
+
         return new DadosResumoFinanceiro(
                 saldoPrevisto,
                 totalPago,
@@ -110,7 +125,10 @@ public class EventoService {
                 totalAdiantamento,
                 qtdAdiantamentos,
                 totalAReceber,
-                qtdAReceber
+                qtdAReceber,
+                totalCustos,
+                lucroLiquido,
+                margemLucroPercentual
         );
     }
 

@@ -62,9 +62,9 @@ public class AutenticacaoController {
     @GetMapping("/versao")
     public ResponseEntity<Map<String, Object>> obterVersaoServidor() {
         return ResponseEntity.ok(Map.of(
-                "versaoServidor", "1.01",
+                "versaoServidor", "1.02",
                 "dataVersao", "2026-11-06",
-                "notas", "Versão 1.01 com leitor de IA Gemini 1.5 Flash, busca de CEP ViaCEP, hiperlinks para Google Maps e atualização automática OTA."
+                "notas", "Versão 1.02 com Custo de Eventos, 4 cards de visão financeira (Pagos 🟢, Adiantamentos 🟠, Custos 🔴, Margem 🔵), gráfico exclusivo de Lucro Líquido e filtros Semanal/Mensal/Anual."
         ));
     }
 

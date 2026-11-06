@@ -9,6 +9,9 @@ public record DadosResumoFinanceiro(
         BigDecimal totalAdiantamento,
         long quantidadeAdiantamentos,
         BigDecimal totalAReceber,
-        long quantidadeAReceber
+        long quantidadeAReceber,
+        BigDecimal totalCustos,
+        BigDecimal lucroLiquido,
+        BigDecimal margemLucroPercentual
 ) {
 }

@@ -24,6 +24,7 @@ public record DadosDetalhamentoEvento(
         String statusPagamento,
         BigDecimal valor,
         BigDecimal valorAdiantamento,
+        BigDecimal custo,
         String observacoes
 ) {
     public DadosDetalhamentoEvento(Evento evento) {
@@ -51,6 +52,7 @@ public record DadosDetalhamentoEvento(
                 evento.getStatusPagamento(),
                 Objects.requireNonNullElse(evento.getValor(), BigDecimal.ZERO),
                 Objects.requireNonNullElse(evento.getValorAdiantamento(), BigDecimal.ZERO),
+                Objects.requireNonNullElse(evento.getCusto(), BigDecimal.ZERO),
                 evento.getObservacoes()
         );
     }

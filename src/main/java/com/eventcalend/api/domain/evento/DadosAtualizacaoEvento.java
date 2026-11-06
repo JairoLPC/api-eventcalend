@@ -35,6 +35,8 @@ public record DadosAtualizacaoEvento(
         BigDecimal valor,
         @PositiveOrZero(message = "O valor do adiantamento não pode ser negativo")
         BigDecimal valorAdiantamento,
+        @PositiveOrZero(message = "O custo não pode ser negativo")
+        BigDecimal custo,
         String observacoes
 ) {
 }
